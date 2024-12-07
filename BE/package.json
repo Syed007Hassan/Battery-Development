@@ -1,0 +1,29 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "nodemon -L index.js",
+    "import-data": "node scripts/import-data.js",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up",
+    "docker:down": "docker-compose down",
+    "docker:import": "docker-compose exec api npm run import-data"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "csv-parse": "^5.6.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.8.4",
+    "nodemon": "^2.0.22",
+    "winston": "^3.11.0",
+    "morgan": "^1.10.0"
+  }
+}

@@ -1,0 +1,28 @@
+version: '3.8'
+services:
+  api:
+    build: .
+    ports:
+      - "3001:3001"
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+      - ./logs:/usr/src/app/logs
+    environment:
+      - NODE_ENV=development
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/carsdb?authSource=admin
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+
+volumes:
+  mongodb_data: 
