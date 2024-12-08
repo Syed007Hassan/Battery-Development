@@ -15,22 +15,14 @@ The system leverages a sophisticated architecture that provides a seamless user 
 Frontend: 
 - React with TypeScript
 - Material-UI (MUI)
-- AG Grid Enterprise
+- React AG Grid 
 - Vite for build tooling
 
 Backend: 
 - Express.js
 - Node.js
 - MongoDB
-
-Infrastructure:   
 - Docker
-- Docker Compose
-
-Additional Libraries:
-- Axios for API calls
-- Lodash for utility functions
-- React Router for navigation
 
 ## Key Features
 
