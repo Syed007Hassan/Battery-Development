@@ -69,22 +69,6 @@ Additional Libraries:
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:3001
 
-### Data Import
-The application comes with a data import script that loads the initial electric car data from a CSV file into MongoDB. The script is located at `BE/scripts/import-data.js` and handles:
-- Clearing existing data
-- Parsing CSV records
-- Data type conversion and validation
-- Safe insertion into MongoDB
-
-To re-run the import at any time:
-```bash
-# If running locally
-npm run import-data
-
-# If using Docker
-docker-compose exec api npm run import-data
-```
-
 ## Architecture Overview
 
 ### Frontend Architecture
