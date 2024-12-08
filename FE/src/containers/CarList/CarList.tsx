@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Container, 
@@ -27,54 +27,52 @@ export const CarList = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCars = useCallback(async (params = {}) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const [response] = await Promise.all([
-        getCars({
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((value: string) => {
+        setSearchTerm(value);
+      }, 500),
+    []
+  );
+
+  const fetchCars = useCallback(
+    async (params = {}) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await getCars({
           search: searchTerm,
           page,
           limit: pageSize,
           ...params
-        }),
-        new Promise(resolve => setTimeout(resolve, 300))
-      ]);
+        });
 
-      setCars(response.cars);
-      setTotalRows(response.total);
-    } catch (error) {
-      setError('Failed to fetch cars. Please try again later.');
-      console.error('Error fetching cars:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [searchTerm, page, pageSize]);
+        setCars(response.cars);
+        setTotalRows(response.total);
+      } catch (error) {
+        setError('Failed to fetch cars. Please try again later.');
+        console.error('Error fetching cars:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [searchTerm, page, pageSize]
+  );
 
   useEffect(() => {
     if (searchTerm !== undefined) {
       setPage(1);
-      fetchCars({ search: searchTerm, page: 1, limit: pageSize });
+      fetchCars();
     }
-  }, [searchTerm, pageSize]);
+  }, [searchTerm, fetchCars]);
 
   const handleGridReady = (params: GridReadyEvent) => {
     fetchCars();
   };
 
-  const debouncedSearch = useCallback(
-    debounce((value: string) => {
-      setSearchTerm(value);
-    }, 300),
-    []
-  );
-
   const handleInputChange = (value: string) => {
     setInputValue(value);
-  };
-
-  const handleSearch = (value: string) => {
     debouncedSearch(value);
   };
 
@@ -159,7 +157,6 @@ export const CarList = () => {
           <SearchBar
             value={inputValue}
             onChange={handleInputChange}
-            onSearch={handleSearch}
             disabled={isLoading}
           />
           <DataGrid
