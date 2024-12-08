@@ -5,7 +5,9 @@ import {
   Box, 
   Typography, 
   Paper,
-  useTheme
+  useTheme,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import { GridReadyEvent } from 'ag-grid-community';
 import { DataGrid } from '../../components/DataGrid/DataGrid';
@@ -23,19 +25,27 @@ export const CarList = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchCars = useCallback(async (params = {}) => {
     try {
       setIsLoading(true);
-      const response: CarResponse = await getCars({
-        search: searchTerm,
-        page,
-        limit: pageSize,
-        ...params
-      });
+      setError(null);
+      
+      const [response] = await Promise.all([
+        getCars({
+          search: searchTerm,
+          page,
+          limit: pageSize,
+          ...params
+        }),
+        new Promise(resolve => setTimeout(resolve, 300))
+      ]);
+
       setCars(response.cars);
       setTotalRows(response.total);
     } catch (error) {
+      setError('Failed to fetch cars. Please try again later.');
       console.error('Error fetching cars:', error);
     } finally {
       setIsLoading(false);
@@ -43,16 +53,19 @@ export const CarList = () => {
   }, [searchTerm, page, pageSize]);
 
   useEffect(() => {
-    fetchCars();
-  }, [searchTerm]);
+    if (searchTerm !== undefined) {
+      setPage(1);
+      fetchCars({ search: searchTerm, page: 1, limit: pageSize });
+    }
+  }, [searchTerm, pageSize]);
 
   const handleGridReady = (params: GridReadyEvent) => {
+    fetchCars();
   };
 
   const debouncedSearch = useCallback(
     debounce((value: string) => {
       setSearchTerm(value);
-      setPage(1);
     }, 300),
     []
   );
@@ -66,13 +79,20 @@ export const CarList = () => {
   };
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
-    if (newPage !== page || newPageSize !== pageSize) {
-      setPage(newPage);
+    if (newPageSize !== pageSize) {
+      setPage(1);
       setPageSize(newPageSize);
       fetchCars({ 
-        page: newPage, 
+        page: 1, 
         limit: newPageSize,
-        search: searchTerm
+        search: searchTerm 
+      });
+    } else if (newPage !== page) {
+      setPage(newPage);
+      fetchCars({ 
+        page: newPage, 
+        limit: pageSize,
+        search: searchTerm 
       });
     }
   };
@@ -133,12 +153,14 @@ export const CarList = () => {
             width: '100%',
             backgroundColor: 'background.paper',
             borderRadius: 3,
+            position: 'relative',
           }}
         >
           <SearchBar
             value={inputValue}
             onChange={handleInputChange}
             onSearch={handleSearch}
+            disabled={isLoading}
           />
           <DataGrid
             rowData={cars}
@@ -153,6 +175,15 @@ export const CarList = () => {
           />
         </Paper>
       </Box>
+      <Snackbar 
+        open={!!error} 
+        autoHideDuration={6000} 
+        onClose={() => setError(null)}
+      >
+        <Alert severity="error" onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }; 

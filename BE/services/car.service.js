@@ -4,30 +4,48 @@ const logger = require('../config/logger');
 class CarService {
   async getAllCars(query = {}) {
     try {
-      const { search, page = 1, limit = 10 } = query;
-      
-      // Build the query
+      const { search, filter, page = 1, limit = 10 } = query;
       let dbQuery = {};
 
-      // Handle search across multiple fields
+      // Handle search
       if (search && search.trim()) {
         const searchRegex = new RegExp(search.trim(), 'i');
-        dbQuery = {
-          $or: [
-            { Brand: searchRegex },
-            { Model: searchRegex },
-            { BodyStyle: searchRegex },
-            { PowerTrain: searchRegex }
-          ]
-        };
+        dbQuery.$or = [
+          { Brand: searchRegex },
+          { Model: searchRegex },
+          { BodyStyle: searchRegex },
+          { PowerTrain: searchRegex }
+        ];
       }
 
-      // Get total count first
+      // Handle filters
+      if (filter) {
+        const filters = Array.isArray(filter) ? filter : [filter];
+        filters.forEach(filterItem => {
+          const { field, operator, value } = JSON.parse(filterItem);
+          switch (operator) {
+            case 'contains':
+              dbQuery[field] = { $regex: value, $options: 'i' };
+              break;
+            case 'equals':
+              dbQuery[field] = value;
+              break;
+            case 'startsWith':
+              dbQuery[field] = { $regex: `^${value}`, $options: 'i' };
+              break;
+            case 'endsWith':
+              dbQuery[field] = { $regex: `${value}$`, $options: 'i' };
+              break;
+            case 'isEmpty':
+              dbQuery[field] = { $in: ['', null] };
+              break;
+          }
+        });
+      }
+
       const total = await Car.countDocuments(dbQuery);
-      
       const skip = (parseInt(page) - 1) * parseInt(limit);
       
-      // Then get the paginated data
       const cars = await Car.find(dbQuery)
         .sort({ Brand: 1, Model: 1 })
         .skip(skip)

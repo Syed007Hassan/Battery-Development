@@ -6,13 +6,15 @@ import {
   ICellRendererParams,
   PaginationChangedEvent,
   ModuleRegistry,
-  ClientSideRowModelModule
+  ClientSideRowModelModule,
+  FilterChangedEvent
 } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-material.css';
 import { IconButton, Tooltip, Box, styled } from '@mui/material';
 import { Visibility, Delete } from '@mui/icons-material';
 import { Car } from '../../types/car';
+import { Loader } from '../Loader/Loader';
 
 // Register the ClientSideRowModel module
 ModuleRegistry.registerModules([ClientSideRowModelModule]);
@@ -27,11 +29,13 @@ interface DataGridProps {
   onViewClick?: (data: Car) => void;
   onDeleteClick?: (data: Car) => void;
   onPageChange?: (page: number, pageSize: number) => void;
+  onFilterChange?: (filters: any[]) => void;
 }
 
 const StyledGridBox = styled(Box)(({ theme }) => ({
   height: 600,
   width: '100%',
+  position: 'relative',
   '& .ag-theme-material': {
     '--ag-font-family': theme.typography.fontFamily,
     '--ag-font-size': '14px',
@@ -60,10 +64,19 @@ const StyledGridBox = styled(Box)(({ theme }) => ({
     },
 
     '& .ag-row': {
+      transition: 'background-color 0.2s ease, transform 0.2s ease',
       borderBottom: `1px solid ${theme.palette.divider}`,
       '&:last-child': {
         borderBottom: 'none',
       },
+      '&.ag-row-animation': {
+        transform: 'translateY(0)',
+        opacity: 1,
+      },
+      '&.ag-row-animation-entering': {
+        transform: 'translateY(10px)',
+        opacity: 0,
+      }
     },
 
     // Pagination panel styling
@@ -93,6 +106,11 @@ const StyledGridBox = styled(Box)(({ theme }) => ({
         },
       },
     },
+
+    // Fade transition for content
+    '& .ag-cell': {
+      transition: 'opacity 0.2s ease',
+    }
   },
 }));
 
@@ -105,7 +123,8 @@ export const DataGrid = memo(({
   onGridReady,
   onViewClick,
   onDeleteClick,
-  onPageChange 
+  onPageChange,
+  onFilterChange
 }: DataGridProps) => {
   const gridRef = useRef<AgGridReact>(null);
 
@@ -127,10 +146,24 @@ export const DataGrid = memo(({
     );
   }, [onViewClick, onDeleteClick]);
 
+  const handleFilterChanged = useCallback((event: FilterChangedEvent) => {
+    const filterModel = event.api.getFilterModel();
+    const filters = Object.entries(filterModel).map(([field, model]) => ({
+      field,
+      operator: model.type,
+      value: model.filter
+    }));
+    onFilterChange?.(filters);
+  }, [onFilterChange]);
+
   const defaultColDef = useMemo(() => ({
     sortable: true,
-    filter: 'agTextColumnFilter',
+    filter: true,
     floatingFilter: true,
+    filterParams: {
+      buttons: ['reset', 'apply'],
+      closeOnApply: true,
+    },
     resizable: true,
     minWidth: 100,
     flex: 1,
@@ -170,17 +203,25 @@ export const DataGrid = memo(({
     if (!api) return;
 
     const currentPage = api.paginationGetCurrentPage();
-    const pageSize = api.paginationGetPageSize();
+    const currentPageSize = api.paginationGetPageSize();
     
     // Only trigger if it's a user-initiated change
     if (event.newPage || event.newPageSize) {
-      onPageChange?.(currentPage + 1, pageSize);
+      onPageChange?.(currentPage + 1, currentPageSize);
     }
   }, [onPageChange]);
 
   return (
     <StyledGridBox>
-      <div className="ag-theme-material" style={{ height: '100%', width: '100%' }}>
+      <div 
+        className="ag-theme-material" 
+        style={{ 
+          height: '100%', 
+          width: '100%',
+          opacity: isLoading ? 0.6 : 1,
+          transition: 'opacity 0.2s ease-in-out'
+        }}
+      >
         <AgGridReact
           ref={gridRef}
           rowData={rowData}
@@ -202,23 +243,26 @@ export const DataGrid = memo(({
           onPaginationChanged={onPaginationChanged}
           suppressPaginationPanel={false}
           animateRows={true}
-          loadingOverlayComponent={'Loading...'}
-          overlayLoadingTemplate={
-            '<span class="ag-overlay-loading-center">Loading...</span>'
-          }
+          rowAnimation="sequential"
+          loadingOverlayComponent={null}
+          suppressLoadingOverlay={true}
           // Updated pagination properties
           rowModelType="clientSide"
           suppressRowVirtualisation={true}
           paginationAutoPageSize={false}
           // This will show the total number of items
           paginationShowTotalPages={true}
-          paginationTotalPages={Math.ceil(totalRows / pageSize)}
+          paginationTotalPages={Math.max(1, Math.ceil(totalRows / pageSize))}
           // Format the page numbers
           paginationNumberFormatter={(params) => {
             return `[${params.value.toLocaleString()}]`;
           }}
+          onFilterChanged={handleFilterChanged}
+          // Reset to first page when data changes
+          key={`${totalRows}-${pageSize}`}
         />
       </div>
+      {isLoading && <Loader />}
     </StyledGridBox>
   );
 });

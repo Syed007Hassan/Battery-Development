@@ -41,9 +41,10 @@ interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
   onSearch: (value: string) => void;
+  disabled?: boolean;
 }
 
-export const SearchBar = ({ value, onChange, onSearch }: SearchBarProps) => {
+export const SearchBar = ({ value, onChange, onSearch, disabled }: SearchBarProps) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     onChange(newValue);
@@ -58,10 +59,14 @@ export const SearchBar = ({ value, onChange, onSearch }: SearchBarProps) => {
         placeholder="Search cars..."
         value={value}
         onChange={handleChange}
+        disabled={disabled}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <SearchIcon color="action" sx={{ fontSize: 22 }} />
+              <SearchIcon 
+                color={disabled ? "disabled" : "action"} 
+                sx={{ fontSize: 22 }} 
+              />
             </InputAdornment>
           ),
         }}

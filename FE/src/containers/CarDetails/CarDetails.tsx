@@ -6,9 +6,11 @@ import {
   Typography, 
   Paper, 
   Grid, 
-  Button 
+  Button, 
+  Divider,
+  Chip
 } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import { ArrowBack, Speed, Battery90, Timer } from '@mui/icons-material';
 import { getCarById } from '../../services/api';
 import { Car } from '../../types/car';
 
@@ -41,46 +43,92 @@ export const CarDetails = () => {
   }
 
   return (
-    <Container maxWidth="md">
-      <Box sx={{ my: 4 }}>
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => navigate(-1)}
-          sx={{ mb: 2 }}
-        >
-          Back to List
-        </Button>
-        <Paper elevation={3} sx={{ p: 3 }}>
-          <Typography variant="h4" gutterBottom>
-            {car.Brand} {car.Model}
-          </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Performance</Typography>
-              <Typography>Acceleration: {car.AccelSec} sec</Typography>
-              <Typography>Top Speed: {car.TopSpeed_KmH} km/h</Typography>
-              <Typography>Range: {car.Range_Km} km</Typography>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography variant="subtitle1">Specifications</Typography>
-              <Typography>Body Style: {car.BodyStyle}</Typography>
-              <Typography>Segment: {car.Segment}</Typography>
-              <Typography>Seats: {car.Seats}</Typography>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="subtitle1">Charging</Typography>
-              <Typography>Efficiency: {car.Efficiency_WhKm} Wh/km</Typography>
-              <Typography>Fast Charge: {car.FastCharge_KmH} km/h</Typography>
-              <Typography>Rapid Charge: {car.RapidCharge}</Typography>
-              <Typography>Plug Type: {car.PlugType}</Typography>
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="subtitle1">Price</Typography>
-              <Typography>€{car.PriceEuro.toLocaleString()}</Typography>
-            </Grid>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Button
+        startIcon={<ArrowBack />}
+        onClick={() => navigate(-1)}
+        variant="outlined"
+        sx={{ mb: 3 }}
+      >
+        Back to List
+      </Button>
+
+      <Paper elevation={0} sx={{ p: 4, borderRadius: 3 }}>
+        <Typography variant="h4" gutterBottom color="primary.dark">
+          {car.Brand} {car.Model}
+        </Typography>
+        <Divider sx={{ my: 3 }} />
+
+        <Grid container spacing={4}>
+          {/* Key Metrics */}
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', gap: 4, mb: 4 }}>
+              <Box sx={{ textAlign: 'center' }}>
+                <Speed color="primary" sx={{ fontSize: 40, mb: 1 }} />
+                <Typography variant="h6">{car.TopSpeed_KmH} km/h</Typography>
+                <Typography variant="body2" color="text.secondary">Top Speed</Typography>
+              </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <Battery90 color="primary" sx={{ fontSize: 40, mb: 1 }} />
+                <Typography variant="h6">{car.Range_Km} km</Typography>
+                <Typography variant="body2" color="text.secondary">Range</Typography>
+              </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <Timer color="primary" sx={{ fontSize: 40, mb: 1 }} />
+                <Typography variant="h6">{car.AccelSec}s</Typography>
+                <Typography variant="body2" color="text.secondary">0-100 km/h</Typography>
+              </Box>
+            </Box>
           </Grid>
-        </Paper>
-      </Box>
+
+          {/* Specifications */}
+          <Grid item xs={12} md={6}>
+            <Typography variant="h6" gutterBottom>Vehicle Details</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <DetailRow label="Body Style" value={car.BodyStyle} />
+              <DetailRow label="Segment" value={car.Segment} />
+              <DetailRow label="Seats" value={car.Seats} />
+              <DetailRow label="Power Train" value={car.PowerTrain} />
+            </Box>
+          </Grid>
+
+          {/* Charging */}
+          <Grid item xs={12} md={6}>
+            <Typography variant="h6" gutterBottom>Charging</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <DetailRow label="Efficiency" value={`${car.Efficiency_WhKm} Wh/km`} />
+              <DetailRow label="Fast Charge" value={`${car.FastCharge_KmH} km/h`} />
+              <DetailRow label="Rapid Charge" value={car.RapidCharge} />
+              <DetailRow label="Plug Type" value={car.PlugType} />
+            </Box>
+          </Grid>
+
+          {/* Price */}
+          <Grid item xs={12}>
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                p: 3, 
+                bgcolor: 'primary.light', 
+                color: 'white',
+                borderRadius: 2,
+                mt: 2
+              }}
+            >
+              <Typography variant="h5">
+                Price: €{car.PriceEuro.toLocaleString()}
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Paper>
     </Container>
   );
-}; 
+};
+
+const DetailRow = ({ label, value }: { label: string; value: string | number }) => (
+  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Typography color="text.secondary">{label}</Typography>
+    <Typography fontWeight="500">{value}</Typography>
+  </Box>
+); 
