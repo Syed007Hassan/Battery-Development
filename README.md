@@ -1,4 +1,6 @@
 # Electric Cars Catalog with Advanced Data Grid
+<img width="1494" alt="Screenshot 2024-12-09 at 00 20 07" src="https://github.com/user-attachments/assets/61ae9471-2ebc-457c-8329-0b9b1c196b8f">
+
 
 ## Overview
 
