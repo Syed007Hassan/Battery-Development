@@ -24,5 +24,20 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=password
 
+  frontend:
+    build: 
+      context: ../FE
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../FE:/usr/src/app    
+      - /usr/src/app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:3001/api
+    command: npm run dev -- --host
+    depends_on:
+      - api
+
 volumes:
   mongodb_data: 

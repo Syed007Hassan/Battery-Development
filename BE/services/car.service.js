@@ -4,72 +4,40 @@ const logger = require('../config/logger');
 class CarService {
   async getAllCars(query = {}) {
     try {
-      const { search, filter, sort, page = 1, limit = 10 } = query;
+      const { search, page = 1, limit = 10 } = query;
+      
+      // Build the query
       let dbQuery = {};
 
-      // Handle search
-      if (search) {
-        dbQuery.$text = { $search: search };
+      // Handle search across multiple fields
+      if (search && search.trim()) {
+        const searchRegex = new RegExp(search.trim(), 'i');
+        dbQuery = {
+          $or: [
+            { Brand: searchRegex },
+            { Model: searchRegex },
+            { BodyStyle: searchRegex },
+            { PowerTrain: searchRegex }
+          ]
+        };
       }
 
-      // Handle filters
-      if (filter) {
-        const filters = Array.isArray(filter) ? filter : [filter];
-        filters.forEach(filterItem => {
-          const { field, operator, value } = JSON.parse(filterItem);
-          switch (operator) {
-            case 'contains':
-              dbQuery[field] = { $regex: value, $options: 'i' };
-              break;
-            case 'equals':
-              dbQuery[field] = value;
-              break;
-            case 'startsWith':
-              dbQuery[field] = { $regex: `^${value}`, $options: 'i' };
-              break;
-            case 'endsWith':
-              dbQuery[field] = { $regex: `${value}$`, $options: 'i' };
-              break;
-            case 'isEmpty':
-              dbQuery[field] = { $in: ['', null] };
-              break;
-            case 'greaterThan':
-              dbQuery[field] = { $gt: parseFloat(value) };
-              break;
-            case 'lessThan':
-              dbQuery[field] = { $lt: parseFloat(value) };
-              break;
-            case 'between':
-              const [min, max] = value.split(',');
-              dbQuery[field] = { $gte: parseFloat(min), $lte: parseFloat(max) };
-              break;
-          }
-        });
-      }
-
-      const skip = (page - 1) * limit;
+      // Get total count first
+      const total = await Car.countDocuments(dbQuery);
       
-      // Handle sorting
-      let sortOptions = {};
-      if (sort) {
-        const { field, direction } = JSON.parse(sort);
-        sortOptions[field] = direction === 'desc' ? -1 : 1;
-      }
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      
+      // Then get the paginated data
+      const cars = await Car.find(dbQuery)
+        .sort({ Brand: 1, Model: 1 })
+        .skip(skip)
+        .limit(parseInt(limit));
 
-      const [cars, total] = await Promise.all([
-        Car.find(dbQuery)
-          .sort(sortOptions)
-          .skip(skip)
-          .limit(parseInt(limit)),
-        Car.countDocuments(dbQuery)
-      ]);
-
-      logger.info(`Retrieved ${cars.length} cars from database`);
       return {
         cars,
         total,
         page: parseInt(page),
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / parseInt(limit))
       };
     } catch (error) {
       logger.error('Error in getAllCars:', error);
