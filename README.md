@@ -77,3 +77,10 @@ The application is containerized using Docker, with separate containers for:
 - Backend Express.js server
 - MongoDB database
 Docker Compose orchestrates these containers, handling networking and environment configuration automatically.
+
+### Demo
+   
+https://github.com/user-attachments/assets/8921f2bc-64a3-49dc-879a-25d34dc337eb
+
+
+
